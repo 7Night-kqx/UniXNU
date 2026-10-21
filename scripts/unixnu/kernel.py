@@ -79,16 +79,13 @@ def build(ctx, modules):
     env['JOBS'] = str(ctx.jobs)
     record = ctx.tree / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json'
     if not record.is_file():
-        # The archive builders and the boot progress layer read compile records of the XNU build, which only an earlier
-        # pass leaves behind. A first build from scratch therefore runs one pass without them; it stops at the link,
-        # which needs their archives, so only the records are required of it.
+        # The archive builders and the boot progress layer read compile records of the XNU build, which only a
+        # compiled tree leaves behind. A first build from scratch runs one pass in bootstrap mode: the archive
+        # section of the script is skipped (its output does not exist yet) and make is allowed to fail at the
+        # link, which needs those archives. Only the records are required of that pass.
         log('kernel: bootstrap pass for the compile records')
-        subprocess_env = {**env, 'XNU_BOOT_PROGRESS': '0'}
-        try:
-            run(['bash', script], cwd=ctx.tree, env=subprocess_env, log_file=ctx.logs / 'kernel-bootstrap.log')
-        except Error:
-            if not record.is_file():
-                raise
+        subprocess_env = {**env, 'XNU_BOOT_PROGRESS': '0', 'XNU_BOOTSTRAP': '1'}
+        run(['bash', script], cwd=ctx.tree, env=subprocess_env, log_file=ctx.logs / 'kernel-bootstrap.log')
     build_archives(ctx, env)
     run(['bash', script], cwd=ctx.tree, env=env, log_file=ctx.logs / 'kernel.log')
 

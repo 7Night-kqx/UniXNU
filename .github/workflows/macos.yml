@@ -112,6 +112,13 @@ jobs:
             exit 1
           fi
 
+      - name: Check the kernel build path
+        run: |
+          # The bootstrap mode is what makes a first build from scratch possible: no compile records yet,
+          # so the archive builders cannot run before make, and make cannot link before the archives.
+          # Run it before the twenty-minute build, not after it.
+          python3 scripts/tests/check-kernel-bootstrap.py
+
       - name: Build kernel
         env:
           IPSW_URL: ${{ inputs.ipsw_url }}
@@ -153,6 +160,7 @@ jobs:
           ./unixnu build payload "${args[@]}"
 
       - name: Upload kernel and payload
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unixnu-${{ inputs.defconfig }}
@@ -160,14 +168,14 @@ jobs:
             out/*/kernel/**
             out/*/payload/**
             out/*/logs/**
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Upload userdata
-        if: inputs.upload_userdata && contains(inputs.steps, 'userdata')
+        if: always() && inputs.upload_userdata && contains(inputs.steps, 'userdata')
         uses: actions/upload-artifact@v4
         with:
           name: unixnu-userdata-${{ inputs.defconfig }}
           path: out/*/userdata/**
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
