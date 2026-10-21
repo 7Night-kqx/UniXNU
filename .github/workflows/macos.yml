@@ -115,6 +115,9 @@ jobs:
       - name: Build kernel
         env:
           IPSW_URL: ${{ inputs.ipsw_url }}
+          # prepare-xnu-source.py lists DriverKit headers through api.github.com; authenticated the budget is
+          # 5000 requests per hour instead of the 60 an unauthenticated shared runner IP gets.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           args=()
           if [ -n "$IPSW_URL" ]; then args+=(--ipsw "$IPSW_URL"); fi
