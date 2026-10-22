@@ -20,9 +20,10 @@ on:
         type: choice
         options:
           - kernel
+          - kernel payload
           - kernel userdata
           - kernel userdata payload
-        default: kernel userdata payload
+        default: kernel payload
       ipsw_url:
         description: IPSW URL (empty uses board.toml)
         required: false
