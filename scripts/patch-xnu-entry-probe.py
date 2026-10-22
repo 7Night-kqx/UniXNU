@@ -197,8 +197,16 @@ def assemble_c(source, va, workdir, symbols):
     lld = tool('ld.lld')
     objcopy = tool('llvm-objcopy')
     nm = tool('llvm-nm')
-    # UNIXNU_UEFI is the Mu-Silicium checkout when the unixnu driver runs this script.
-    font_dir = Path(os.environ.get('UNIXNU_UEFI') or ROOT / 'uefi-sheng') / 'Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib'
+    # The glyph table is the AOSP 5x12 font. DarwinBoot carries a byte-identical copy as DiagFont.h and
+    # is a submodule of this repository, so prefer it: the Mu-Silicium checkout (UNIXNU_UEFI) is an
+    # optional input that only the firmware and boot image steps need, and the payload step used to
+    # fail with "'Font.h' file not found" on a runner that had no Mu-Silicium at all.
+    font_headers = [ROOT / 'drivers/DarwinBoot/DarwinBootPkg/Driver']
+    if os.environ.get('UNIXNU_UEFI'):
+        font_headers.append(Path(os.environ['UNIXNU_UEFI'])
+                            / 'Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib')
+    font_dir = next((d for d in font_headers if (d / 'Font.h').is_file()
+                     or (d / 'DiagFont.h').is_file()), font_headers[0])
     obj, elf, binary = (workdir / name for name in ('panic.o', 'panic.elf', 'panic.bin'))
     definitions = []
     for macro, name, width in (('MAX_MEM', '_max_mem', 8),

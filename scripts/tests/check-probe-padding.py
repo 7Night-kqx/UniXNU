@@ -104,6 +104,23 @@ def main():
           "shutil.which('clang') or" not in source and "shutil.which('ld.lld') or" not in source,
           'a fallback path string hides which package is missing')
 
+    # The panic screen needs a glyph table. DarwinBoot carries a byte-identical DiagFont.h and is a
+    # submodule of this repository, while the Mu-Silicium Font.h is an optional input: the payload
+    # step must not require a Mu-Silicium checkout to place the panic screen.
+    darwinboot = ROOT / 'drivers/DarwinBoot/DarwinBootPkg/Driver'
+    check('DarwinBoot carries the glyph table',
+          (darwinboot / 'DiagFont.h').is_file(),
+          'DiagFont.h is the font the payload patch falls back to')
+    if (darwinboot / 'DiagFont.h').is_file():
+        header = (darwinboot / 'DiagFont.h').read_text()
+        check('the fallback header defines the glyph font', 'GLYPH_FONT' in header)
+        check('the payload patch prefers the in-repo font', "ROOT / 'drivers/DarwinBoot/DarwinBootPkg/Driver'" in source,
+              'the patcher still only looks in the optional Mu-Silicium checkout')
+        panic_c = (ROOT / 'scripts/xnu-panic-screen.c').read_text()
+        check('the panic screen accepts either font header',
+              '__has_include("Font.h")' in panic_c and 'include "DiagFont.h"' in panic_c,
+              'xnu-panic-screen.c still includes Font.h unconditionally')
+
     if failures:
         print(f'\n{len(failures)} failed')
         return 1

@@ -291,5 +291,16 @@ __attribute__((naked, noreturn, section(".text.a_common"))) void panic_screen_co
   __asm__ volatile ("ldr x1, [x1]\n\tb panic_screen_main");
 }
 
-#include "Font.h"
+// The 5x12 glyph table exists twice: Font.h in the Mu-Silicium frame buffer library, and a
+// byte-identical DiagFont.h in this repository's DarwinBoot driver. Both define the same
+// GLYPH_FONT, and the payload builds without a Mu-Silicium checkout, so take either.
+#if defined(__has_include)
+#  if __has_include("Font.h")
+#    include "Font.h"
+#  else
+#    include "DiagFont.h"
+#  endif
+#else
+#  include "Font.h"
+#endif
 __attribute__((section(".text.z_font"))) const u64 gFont[] = GLYPH_FONT;
