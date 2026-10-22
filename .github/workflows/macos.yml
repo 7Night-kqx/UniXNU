@@ -6,7 +6,7 @@ on:
       device_repository:
         description: Device repository as owner/name
         required: true
-        default: UniXNU/UniXNU-sheng
+        default: 7Night-kqx/UniXNU-dada
       device_ref:
         description: Device repository ref
         required: true
@@ -14,7 +14,7 @@ on:
       defconfig:
         description: Defconfig name
         required: true
-        default: sheng_defconfig
+        default: dada_defconfig
       steps:
         description: Steps to run
         type: choice
@@ -22,7 +22,7 @@ on:
           - kernel
           - kernel userdata
           - kernel userdata payload
-        default: kernel userdata
+        default: kernel userdata payload
       ipsw_url:
         description: IPSW URL (empty uses board.toml)
         required: false
