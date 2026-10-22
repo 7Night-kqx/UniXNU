@@ -330,6 +330,25 @@ def file_offset(va):
     raise SystemExit(f'{va:#x} is not in a file-backed segment of this kernel')
 
 
+NOP = b'\x1f\x20\x03\xd5'   # arm64 `nop`
+
+
+def is_padding(blob):
+    """True when every word is zero or `nop`: an alignment gap nothing executes.
+
+    ld64 pads the tail of __text with either bytes depending on the toolchain, and
+    the caves are carved out of that gap after _start. A nop is the same statement
+    as a zero word here -- the bytes are never reached -- so both are accepted. The
+    runs are not word aligned (the panic screen has an odd length), so a trailing
+    partial word only has to match the first bytes of one of the two patterns.
+    """
+    for start in range(0, len(blob) - len(blob) % 4, 4):
+        if blob[start:start + 4] not in (b'\0\0\0\0', NOP):
+            return False
+    tail = blob[len(blob) - len(blob) % 4:]
+    return tail in (b'\0\0\0\0'[:len(tail)], NOP[:len(tail)])
+
+
 def branch(from_va, to_va):
     delta = (to_va - from_va) // 4
     if (to_va - from_va) % 4 or not -(1 << 25) <= delta < (1 << 25):
@@ -374,7 +393,7 @@ def main():
         if word(va) != value:
             raise SystemExit(f'{va:#x} holds {word(va):#010x}, expected {value:#010x}: not the kernel these probes are for')
     for va in CAVES.values():
-        if any(data[file_offset(va):file_offset(va) + CAVE_SIZE]):
+        if not is_padding(data[file_offset(va):file_offset(va) + CAVE_SIZE]):
             raise SystemExit(f'Padding at {va:#x} is not empty')
 
     # (site, cave stage, symbols the cave is linked with)
@@ -403,14 +422,14 @@ def main():
     if args.panic_screen:
         # Right after the last probe cave in use, so the padding is shared as tightly as possible.
         PANIC_CAVE = max(CAVES[stage] for _, stage, _ in sites) + CAVE_SIZE
-        if word(PANIC_VA) in (0, 0xFFFFFFFF) or any(data[file_offset(PANIC_CAVE):file_offset(PANIC_CAVE_END)]):
+        if word(PANIC_VA) in (0, 0xFFFFFFFF) or not is_padding(data[file_offset(PANIC_CAVE):file_offset(PANIC_CAVE_END)]):
             raise SystemExit('panic() or the panic screen padding is not as expected')
         with tempfile.TemporaryDirectory() as tmp:
             code, load, entry = assemble_c(ROOT / 'scripts/xnu-panic-screen.c', PANIC_CAVE, Path(tmp), kernel_names)
             common_entry = panic_common_entry(Path(tmp), code, load)
         if load + len(code) > PANIC_CAVE_END:
             raise SystemExit(f'panic screen is {len(code):#x} bytes at {load:#x}, the padding ends at {PANIC_CAVE_END:#x}')
-        if any(data[file_offset(load):file_offset(load) + len(code)]):
+        if not is_padding(data[file_offset(load):file_offset(load) + len(code)]):
             raise SystemExit(f'Padding at {load:#x} is not empty')
         data[file_offset(load):file_offset(load) + len(code)] = code
         struct.pack_into('<I', data, file_offset(PANIC_VA), branch(PANIC_VA, entry))
