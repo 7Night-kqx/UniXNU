@@ -85,6 +85,25 @@ def main():
           'any(data[file_offset(' not in source,
           'a padding site still uses any(...) and rejects nop-filled kernels')
 
+    # Homebrew split ld.lld out of llvm, so the patcher must name the right package when a tool is
+    # missing instead of raising FileNotFoundError from inside subprocess.
+    tool_fn = getattr(module, 'tool', None)
+    check('the patcher resolves host tools through one helper', callable(tool_fn),
+          'a missing ld.lld surfaces as FileNotFoundError instead of an install hint')
+    if callable(tool_fn):
+        module.shutil.which = lambda name: None
+        module.os.access = lambda *args: False
+        for name, package in (('ld.lld', 'lld'), ('llvm-objcopy', 'llvm')):
+            try:
+                tool_fn(name)
+            except SystemExit as error:
+                check(f'a missing {name} names its package', package in str(error), str(error))
+            else:
+                check(f'a missing {name} names its package', False, 'tool() returned a path anyway')
+    check('no bare homebrew fallback path remains',
+          "shutil.which('clang') or" not in source and "shutil.which('ld.lld') or" not in source,
+          'a fallback path string hides which package is missing')
+
     if failures:
         print(f'\n{len(failures)} failed')
         return 1
