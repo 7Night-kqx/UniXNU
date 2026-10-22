@@ -33,7 +33,10 @@ for name in ('mockfs_fsnode', 'mockfs_vfsops', 'mockfs_vnops'):
     result = subprocess.run(command, cwd=record['directory'], capture_output=True, text=True)
     (out / (name + '.log')).write_text(result.stdout + result.stderr)
     if result.returncode:
-        raise SystemExit(result.stderr[-4500:])
+        # The whole output: the .log below build/ is not part of the CI artifact, and a tail can cut the
+        # first diagnostic off entirely.
+        print(result.stdout + result.stderr, flush=True)
+        raise SystemExit(f'{source}: compile failed ({result.returncode}); the output above is the whole compiler log')
     data = destination.read_bytes()
     if struct.unpack_from('<4I', data) != (0xfeedfacf, 0x100000c, 0, 1):
         raise SystemExit('Mockfs requires ordinary ARM64 output')

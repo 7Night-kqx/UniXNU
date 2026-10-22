@@ -44,7 +44,10 @@ command += ['-I', str(out / 'include'), '-I', str(ROOT / '.cache/xnu-work/osfmk'
 r = subprocess.run(command, cwd=record['directory'], capture_output=True, text=True)
 (out / 'compile.log').write_text(r.stdout + r.stderr)
 if r.returncode:
-    raise SystemExit((r.stdout + r.stderr)[-3500:])
+    # The whole output: build/storage-abi/compile.log is not part of the CI artifact, and a tail can cut
+    # the first diagnostic off entirely.
+    print(r.stdout + r.stderr, flush=True)
+    raise SystemExit(f'the reference object did not compile ({r.returncode}); the output above is the whole compiler log')
 
 
 def require(value, message):

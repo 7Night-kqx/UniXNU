@@ -122,6 +122,10 @@ jobs:
           # not carry. That header set is staged from the reference source when the archives are built, and
           # a wiring mistake only shows up as a bare "file not found" in the middle of the archive step.
           python3 scripts/tests/check-storage-abi-headers.py
+          # A compile failure has to be readable from the workflow log alone: the per-object compiler logs
+          # live under build/ and are not uploaded, so the builders print their whole output and the archive
+          # driver shows a failing step's whole log. A fixed tail once hid every error of a failed compile.
+          python3 scripts/tests/check-build-log-verbosity.py
 
       - name: Build kernel
         env:

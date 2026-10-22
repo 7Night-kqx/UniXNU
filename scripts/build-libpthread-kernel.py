@@ -61,7 +61,10 @@ def compile_one(source, destination, namespace=None):
     result = subprocess.run(command, cwd=record['directory'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     destination.with_suffix('.log').write_text(result.stdout)
     if result.returncode:
-        raise SystemExit(result.stdout[-4500:])
+        # Print the whole output: the .log next to the object is not part of the CI artifact, and a tail
+        # can cut the first diagnostic (the one that explains the failure) off entirely.
+        print(result.stdout, flush=True)
+        raise SystemExit(f'{source.name}: compile failed ({result.returncode}); the output above is the whole compiler log')
     data = destination.read_bytes()
     if struct.unpack_from('<4I', data) != (0xfeedfacf, 0x100000c, 0, 1):
         raise SystemExit('Unexpected pthread object architecture')

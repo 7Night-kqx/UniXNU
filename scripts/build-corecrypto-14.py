@@ -101,7 +101,7 @@ def compile_one(source):
                             stderr=subprocess.STDOUT, text=True)
     (object_dir / (name + '.log')).write_text(result.stdout)
     return {'source': relative, 'object': destination.name, 'exit_code': result.returncode,
-            'diagnostic': result.stdout[-2500:] if result.returncode else None}
+            'diagnostic': result.stdout if result.returncode else None}
 
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -114,7 +114,9 @@ report = {'source_url': 'https://github.com/ONLYA/corecrypto-2023', 'source_revi
           'kernel_provider_registered': False, 'crypto_selftests_passed': False}
 (OUT / f'build-report{variant}.json').write_text(json.dumps(report, indent=2) + '\n')
 print(f'{len(results)} kernel C sources; {len(failed)} failures', flush=True)
-for result in failed[:8]:
+# Every failing translation unit, with its whole compiler output. The .log next to the object is not part
+# of the CI artifact, and a truncated diagnostic can cut the first error off.
+for result in failed:
     print(result['source'], result['diagnostic'], flush=True)
 if failed:
     sys.exit(1)

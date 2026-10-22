@@ -39,7 +39,7 @@ def tool(name, hint=''):
 
 
 def run(command, *, cwd=None, env=None, log_file=None, capture=False):
-    """Run a command, echoing it. With log_file the output goes there and the tail is shown on failure."""
+    """Run a command, echoing it. With log_file the output goes there and is shown on failure."""
     command = [str(part) for part in command]
     if not capture:
         print('+ ' + ' '.join(command), flush=True)
@@ -53,8 +53,15 @@ def run(command, *, cwd=None, env=None, log_file=None, capture=False):
         with Path(log_file).open('w') as stream:
             result = subprocess.run(command, cwd=cwd, env=env, stdout=stream, stderr=subprocess.STDOUT)
         if result.returncode:
-            tail = Path(log_file).read_text(errors='replace').splitlines()[-30:]
-            print('\n'.join(tail), file=sys.stderr)
+            # Show the failing step's own output, not a fixed tail. The first diagnostic is usually the one
+            # that explains the failure, and a short tail can cut every error off: a compile once ended with
+            # "3 errors generated" while only the notes of its warnings were visible. A step that logs more
+            # than the limit below keeps the beginning of the failure in the file, which is uploaded too.
+            lines = Path(log_file).read_text(errors='replace').splitlines()
+            limit = 4000
+            if len(lines) > limit:
+                print(f'... {len(lines) - limit} earlier line(s) are in {log_file}', file=sys.stderr)
+            print('\n'.join(lines[-limit:]), file=sys.stderr)
             raise Error(f'{command[0]} failed ({result.returncode}); full log: {log_file}')
         return ''
     result = subprocess.run(command, cwd=cwd, env=env)

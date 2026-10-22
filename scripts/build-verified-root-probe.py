@@ -140,7 +140,10 @@ for source in (ROOT / 'kits/VerifiedRoot/src/verified_root.c', ROOT / 'kits/Veri
     result = subprocess.run(command, cwd=record['directory'], capture_output=True, text=True)
     (out / (source.stem + '.log')).write_text(result.stdout + result.stderr)
     if result.returncode:
-        raise SystemExit(result.stderr[-3500:])
+        # The whole output: the .log below build/ is not part of the CI artifact, and a tail can cut the
+        # first diagnostic off entirely.
+        print(result.stdout + result.stderr, flush=True)
+        raise SystemExit(f'{source.name}: compile failed ({result.returncode}); the output above is the whole compiler log')
     objects.append(destination)
 sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True).strip()
 subprocess.run(['xcrun', 'clang', '-target', 'arm64-apple-ios17.0', '-isysroot', sdk, '-c',
