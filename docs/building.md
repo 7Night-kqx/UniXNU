@@ -128,9 +128,11 @@ The kernel step:
 1. Applies `patches/xnu` and `kits/NativePrelink/patches` to the pinned XNU source.
 2. Runs `prepare-xnu-source.py` to restore omitted DriverKit headers.
 3. Runs one XNU pass for the compile records when `startup.o.json` is absent. The pass may stop at the link.
-4. Runs the archive builders in `[kernel] archives` order.
-5. Builds XNU for `ARM64`, machine `BCM2837`, configuration `DEVELOPMENT`, iOS 17, and links the archives.
-6. Prelinks the native kernel against the original kernelcache with `kits/NativePrelink`. A rebuild replaces the earlier candidate.
+4. Stages the public IOStorageFamily headers in `build/storage-abi/include` when the board builds a storage
+   transport, since `<IOKit/storage/IOBlockStorageDevice.h>` is not part of the xnu tree.
+5. Runs the archive builders in `[kernel] archives` order.
+6. Builds XNU for `ARM64`, machine `BCM2837`, configuration `DEVELOPMENT`, iOS 17, and links the archives.
+7. Prelinks the native kernel against the original kernelcache with `kits/NativePrelink`. A rebuild replaces the earlier candidate.
 
 The kernelcache comes from the IPSW unless `--kernelcache` supplies one. The LZFSE payload of the `KernelCache` IM4P is decoded with macOS `compression_tool`, the arm64 slice is selected, and the result is checked against `[kernel.prelink] kernelcache_sha256`.
 

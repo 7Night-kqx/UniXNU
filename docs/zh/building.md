@@ -128,9 +128,11 @@ IPSW 按成员读取，远程 IPSW 不会整体下载。zip 目录和需要的�
 1. 把 `patches/xnu` 和 `kits/NativePrelink/patches` 应用到固定版本的 XNU 源码。
 2. 运行 `prepare-xnu-source.py` 恢复缺失的 DriverKit 头文件。
 3. `startup.o.json` 不存在时，先运行一次 XNU 以生成编译记录。该轮可以在链接前停止。
-4. 按 `[kernel] archives` 的顺序运行静态库脚本。
-5. 为 `ARM64`、机型 `BCM2837`、配置 `DEVELOPMENT`、iOS 17 构建 XNU，并链接静态库。
-6. 用 `kits/NativePrelink` 把原生内核与原始 kernelcache 预链接。重建会替换上一轮的结果。
+4. 当板级配置要构建存储传输层时，把公开的 IOStorageFamily 头文件放入 `build/storage-abi/include`
+   （`<IOKit/storage/IOBlockStorageDevice.h>` 不在 xnu 树里）。
+5. 按 `[kernel] archives` 的顺序运行静态库脚本。
+6. 为 `ARM64`、机型 `BCM2837`、配置 `DEVELOPMENT`、iOS 17 构建 XNU，并链接静态库。
+7. 用 `kits/NativePrelink` 把原生内核与原始 kernelcache 预链接。重建会替换上一轮的结果。
 
 kernelcache 来自 IPSW，除非 `--kernelcache` 指定文件。`KernelCache` IM4P 的 LZFSE 负载由 macOS `compression_tool` 解码，选出 arm64 切片，并按 `[kernel.prelink] kernelcache_sha256` 校验。
 

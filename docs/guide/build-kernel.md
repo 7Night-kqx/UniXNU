@@ -32,7 +32,7 @@ trustcache_tag = "xnu-8796.101.5"
 
 `unixnu build kernel` passes these values to `scripts/build-xnu-4k-baseline.sh` as `UNIXNU_XNU_TAG`, `UNIXNU_XNU_COMMIT`, `UNIXNU_XNU_DARWIN`, `UNIXNU_XNU_VERSION`, `UNIXNU_DRIVERKIT_TAG` and `UNIXNU_TRUSTCACHE_TAG`.
 
-The kernel reference set also pins `libpthread` at `libpthread-519.120.4` and `corecrypto-2023` at commit `11fba65`. The source providers compile against the XNU compile records.
+The kernel reference set also pins `libpthread` at `libpthread-519.120.4`, `corecrypto-2023` at commit `11fba65` and `IOStorageFamily` at `IOStorageFamily-315`. The source providers compile against the XNU compile records, and a board that builds a storage transport gets the IOStorageFamily headers staged in `build/storage-abi/include` before the archive builders run.
 
 The build target is:
 
@@ -98,7 +98,7 @@ The builders read symbol names through `scripts/xnu_symbols.py`. It uses the rec
 
 ## Build sequence
 
-1. `unixnu fetch` clones XNU, libpthread, corecrypto-2023 and the Apple references.
+1. `unixnu fetch` clones XNU, libpthread, corecrypto-2023, IOStorageFamily and the Apple references.
 2. `unixnu build kernel` applies the patches and restores the omitted headers.
 3. When the compile records are absent, it runs one XNU pass for them. The pass may stop at the link.
 4. It runs the `[kernel] archives` builders in order.

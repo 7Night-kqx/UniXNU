@@ -14,6 +14,7 @@ UniXNU builds XNU from the pinned Apple source and applies its patches in name o
 | `AvailabilityVersions` | `AvailabilityVersions-141.1` | Availability macros |
 | `libpthread` | `libpthread-519.120.4` | Source pthread component |
 | `corecrypto-2023` | commit `11fba65` | Source corecrypto component |
+| `IOStorageFamily` | `IOStorageFamily-315` | Public storage headers the storage transports compile against |
 | `edk2` | `release/202608` | EDK II base for the package and firmware |
 
 The XNU entry also carries:

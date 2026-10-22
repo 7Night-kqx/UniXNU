@@ -118,6 +118,10 @@ jobs:
           # so the archive builders cannot run before make, and make cannot link before the archives.
           # Run it before the twenty-minute build, not after it.
           python3 scripts/tests/check-kernel-bootstrap.py
+          # The storage transports include <IOKit/storage/IOBlockStorageDevice.h>, which the xnu headers do
+          # not carry. That header set is staged from the reference source when the archives are built, and
+          # a wiring mistake only shows up as a bare "file not found" in the middle of the archive step.
+          python3 scripts/tests/check-storage-abi-headers.py
 
       - name: Build kernel
         env:

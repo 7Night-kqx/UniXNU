@@ -52,6 +52,15 @@ def build_archives(ctx, env):
     """
     entries = ctx.board.get('kernel', {}).get('archives', [])
     env = dict(env, PATH=toolchain_path())
+    # The storage transports include <IOKit/storage/IOBlockStorageDevice.h>, which is not in the xnu tree: the
+    # classes live in Apple's separate IOStorageFamily project, fetched as a reference. The builders add
+    # build/storage-abi/include to their command line, so stage it (idempotently) before the first of them
+    # runs; staging also rewrites a header whose source changed, which a presence test would miss.
+    transports = ('NativeUfs', 'NativeVirtioBlock', 'NativeRamBlock')
+    if any(name in entry for entry in entries for name in transports):
+        log('kernel: stage the IOStorageFamily headers the storage transports compile against')
+        run(['python3', ctx.tree / 'scripts/storage_abi_headers.py'], cwd=ctx.tree, env=env,
+            log_file=ctx.logs / 'storage-abi-headers.log')
     for index, entry in enumerate(entries, 1):
         parts = shlex.split(entry)
         script = ctx.tree / 'scripts' / parts[0]

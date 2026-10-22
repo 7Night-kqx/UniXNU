@@ -251,7 +251,7 @@ local = "~/Code/device-kit"
 
 Kinds are `driver`, `kit`, `patch`, `package` and `refer`. `path` fetches only a subdirectory. `local` uses a local directory.
 
-The base `feeds.toml` supplies `xnu`, `libplatform`, `libdispatch`, `AvailabilityVersions`, `edk2`, `libpthread` and `corecrypto-2023`.
+The base `feeds.toml` supplies `xnu`, `libplatform`, `libdispatch`, `AvailabilityVersions`, `edk2`, `libpthread`, `corecrypto-2023` and `IOStorageFamily`.
 
 ## Proprietary files
 

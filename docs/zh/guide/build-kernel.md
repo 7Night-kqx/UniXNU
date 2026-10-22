@@ -32,7 +32,7 @@ trustcache_tag = "xnu-8796.101.5"
 
 `unixnu build kernel` 把这些值作为 `UNIXNU_XNU_TAG`、`UNIXNU_XNU_COMMIT`、`UNIXNU_XNU_DARWIN`、`UNIXNU_XNU_VERSION`、`UNIXNU_DRIVERKIT_TAG` 和 `UNIXNU_TRUSTCACHE_TAG` 传给 `scripts/build-xnu-4k-baseline.sh`。
 
-内核参考源码还固定了 `libpthread`（`libpthread-519.120.4`）和 `corecrypto-2023`（commit `11fba65`）。源码提供者按 XNU 编译记录构建。
+内核参考源码还固定了 `libpthread`（`libpthread-519.120.4`）、`corecrypto-2023`（commit `11fba65`）和 `IOStorageFamily`（`IOStorageFamily-315`）。源码提供者按 XNU 编译记录构建；构建存储传输层的板级配置会先由 `scripts/storage_abi_headers.py` 把 IOStorageFamily 头文件放入 `build/storage-abi/include`。
 
 构建目标：
 
@@ -98,7 +98,7 @@ archives = [
 
 ## 构建顺序
 
-1. `unixnu fetch` 克隆 XNU、libpthread、corecrypto-2023 和 Apple 参考源码。
+1. `unixnu fetch` 克隆 XNU、libpthread、corecrypto-2023、IOStorageFamily 和 Apple 参考源码。
 2. `unixnu build kernel` 应用补丁并恢复缺失头文件。
 3. 编译记录不存在时，先运行一次 XNU 生成记录。该轮可以在链接前停止。
 4. 按 `[kernel] archives` 的顺序运行静态库脚本。

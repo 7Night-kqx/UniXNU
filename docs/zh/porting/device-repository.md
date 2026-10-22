@@ -247,7 +247,7 @@ local = "~/Code/device-kit"
 
 kind 为 `driver`、`kit`、`patch`、`package` 或 `refer`。`path` 只拉取子目录，`local` 使用本地目录。
 
-基础 `feeds.toml` 提供 `xnu`、`libplatform`、`libdispatch`、`AvailabilityVersions`、`edk2`、`libpthread` 和 `corecrypto-2023`。
+基础 `feeds.toml` 提供 `xnu`、`libplatform`、`libdispatch`、`AvailabilityVersions`、`edk2`、`libpthread`、`corecrypto-2023` 和 `IOStorageFamily`。
 
 ## 专有文件
 

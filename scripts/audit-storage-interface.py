@@ -4,28 +4,18 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
 import struct
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'kits/NativePrelink'))
+sys.path.insert(0, str(ROOT / 'scripts'))
 import native_prelink as np
+from storage_abi_headers import PINNED_REVISION, stage
 source = ROOT / 'refer/IOStorageFamily'
-revision = subprocess.check_output(['git', '-C', source, 'rev-parse', 'HEAD'], text=True).strip()
-if revision != 'e45fbe30a7879e0b16e26dddb78538f1b00e0bff':
-    raise SystemExit('Unexpected public Darwin 23 IOStorageFamily source')
+headers = stage(ROOT, source, PINNED_REVISION)
 out = ROOT / 'build/storage-abi'
-headers = out / 'include/IOKit/storage'
-headers.mkdir(parents=True, exist_ok=True)
-for path in source.glob('*.h'):
-    shutil.copyfile(path, headers / path.name)
-# Only this platform-selection header is missing from the source-kernel SDK.
-# The reference object is an annotation instrument and is never linked/executed.
-sdk = Path(subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path'], text=True).strip())
-conditions = sdk / 'usr/include/TargetConditionals.h'
-shutil.copyfile(conditions, out / 'include/TargetConditionals.h')
 record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json').read_text().strip().rstrip(','))
 obj_path = out / 'IOBlockStorageDevice-reference.o'
 arguments = record['arguments']
@@ -46,8 +36,10 @@ while index < len(arguments):
     index += 1
 command += ['-I', str(out / 'include'), '-I', str(ROOT / '.cache/xnu-work/osfmk'),
             '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-Wno-deprecated-declarations',
+            # -Wno-unnecessary-virtual-specifier is Apple clang's; the record replays the xcrun compiler, but a
+            # host whose bare "clang" resolves to upstream LLVM must accept the flag list in front of -Werror.
             '-Wno-c99-designator', '-Wno-reorder-init-list', '-Wno-unnecessary-virtual-specifier',
-            '-Wno-deprecated-enum-enum-conversion']
+            '-Wno-deprecated-enum-enum-conversion', '-Wno-unknown-warning-option']
 (out / 'compile-command.json').write_text(json.dumps(command, indent=2) + '\n')
 r = subprocess.run(command, cwd=record['directory'], capture_output=True, text=True)
 (out / 'compile.log').write_text(r.stdout + r.stderr)

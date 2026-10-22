@@ -62,3 +62,14 @@ name = "corecrypto-2023"
 kind = "refer"
 git = "https://github.com/ONLYA/corecrypto-2023.git"
 commit = "11fba65b12d8830630e248dfa8344caf8b065f26"
+
+[[source]]
+# The storage classes (IOBlockStorageDevice and the rest) are not in the xnu tree: they are a separate Apple
+# project, and the target kernelcache carries the original IOStorageFamily kext. The storage transports are
+# compiled against these public Darwin 23 headers, so scripts/storage_abi_headers.py pins the same revision
+# the qualified original kext was audited at (scripts/audit-storage-interface.py).
+name = "IOStorageFamily"
+kind = "refer"
+git = "https://github.com/apple-oss-distributions/IOStorageFamily.git"
+ref = "IOStorageFamily-315"
+commit = "e45fbe30a7879e0b16e26dddb78538f1b00e0bff"
