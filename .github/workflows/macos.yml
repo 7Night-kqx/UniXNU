@@ -51,6 +51,10 @@ on:
         description: Upload the userdata image (large)
         type: boolean
         default: false
+      unique_chip_id:
+        description: Platform seed for the payload (hex, any nonzero value); empty uses the secret
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -150,7 +154,7 @@ jobs:
       - name: Build payload
         if: contains(inputs.steps, 'payload')
         env:
-          UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
+          UNIQUE_CHIP_ID: ${{ inputs.unique_chip_id || secrets.UNIXNU_UNIQUE_CHIP_ID }}
           SKIP_SETUP: ${{ inputs.skip_setup }}
           OWNER_TRUST_CACHE: ${{ inputs.owner_trust_cache }}
         run: |
