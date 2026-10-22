@@ -598,10 +598,18 @@ if [ "$BOOTSTRAP" = 0 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" = 1 ]; then
     # The transport derives from IOBlockStorageDevice, which is not in the xnu tree: the base class is
     # compiled from the pinned IOStorageFamily source and has to be linked in before the transport, or the
     # link stops with "vtable for IOBlockStorageDevice" and "IOBlockStorageDevice::gMetaClass" undefined.
-    STORAGE_CLASSES_ARCHIVE=$ROOT/build/storage-classes/libStorageClasses.a
-    require_archive "$STORAGE_CLASSES_ARCHIVE"
-    KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$STORAGE_CLASSES_ARCHIVE"
-    KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $STORAGE_CLASSES_ARCHIVE"
+    #
+    # The probe-only build leaves the block-device half of the transport out (XNU_NATIVE_UFS_PROBE_ONLY),
+    # so it references no IOStorageFamily symbol and the base class must stay out as well: linking it
+    # would register a second class of that name, and the kernelcache's own com.apple.iokit.IOStorageFamily
+    # kext refuses the duplicate ("class IOBlockStorageDevice is a duplicate; kext __kernel__ already has
+    # a class by that name", libkern/c++/OSMetaClass.cpp).
+    if [ "${XNU_NATIVE_UFS_PROBE_ONLY:-0}" != 1 ]; then
+      STORAGE_CLASSES_ARCHIVE=$ROOT/build/storage-classes/libStorageClasses.a
+      require_archive "$STORAGE_CLASSES_ARCHIVE"
+      KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$STORAGE_CLASSES_ARCHIVE"
+      KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $STORAGE_CLASSES_ARCHIVE"
+    fi
     UFS_ARCHIVE=$ROOT/build/native-ufs/libNativeUfs.a
     require_archive "$UFS_ARCHIVE"
     KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$UFS_ARCHIVE"
