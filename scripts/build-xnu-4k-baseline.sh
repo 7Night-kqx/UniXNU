@@ -595,6 +595,13 @@ if [ "$BOOTSTRAP" = 0 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" = 1 ]; then
     KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $ARMCPU_ARCHIVE"
   fi
   if [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
+    # The transport derives from IOBlockStorageDevice, which is not in the xnu tree: the base class is
+    # compiled from the pinned IOStorageFamily source and has to be linked in before the transport, or the
+    # link stops with "vtable for IOBlockStorageDevice" and "IOBlockStorageDevice::gMetaClass" undefined.
+    STORAGE_CLASSES_ARCHIVE=$ROOT/build/storage-classes/libStorageClasses.a
+    require_archive "$STORAGE_CLASSES_ARCHIVE"
+    KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$STORAGE_CLASSES_ARCHIVE"
+    KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $STORAGE_CLASSES_ARCHIVE"
     UFS_ARCHIVE=$ROOT/build/native-ufs/libNativeUfs.a
     require_archive "$UFS_ARCHIVE"
     KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$UFS_ARCHIVE"
