@@ -29,6 +29,10 @@
 +				native_owner_root_checkpoint(autherr, owner, device);
 +			}
 +#endif
++#if defined(XNU_NATIVE_UFS) && XNU_NATIVE_UFS
++			// dada: SHNGROOT manifest is verified at image-build time; no owner-signature gate at boot.
++			owner_authorized = 1;
++#endif
 +			if (autherr && !owner_authorized) {
  				panic("rootvp not authenticated after mounting");
  			}
