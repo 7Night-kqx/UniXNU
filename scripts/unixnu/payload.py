@@ -37,7 +37,17 @@ def check_args(arguments):
 
 
 def check_native_root(kernel, arguments):
-    """Refuse the known bare-metal AMFI panic before the volume is written."""
+    """Refuse the known bare-metal AMFI panic before the volume is written.
+
+    The check follows what the kernel actually links, not the argument alone. Two shapes exist:
+
+      - a board that prelinks AMFI needs a PMGR to answer its policy questions, and the only one
+        this tree has is the sheng integration (`sheng-pmgr=2`). Without it AMFI panics with
+        "AMFI: No PMGR?" (ConfigurationSettings.cpp:235).
+      - a board that drops AMFI and PMGR from the prelink roots (see the dada port's
+        docs/known-values.md) has neither, so neither the argument nor the symbol exists, and asking
+        for sheng-pmgr=2 would name an integration the kernel does not carry.
+    """
     values = {}
     for argument in arguments:
         key, separator, value = argument.partition('=')
@@ -45,11 +55,21 @@ def check_native_root(kernel, arguments):
             values.setdefault(key, []).append(value)
     if '1' not in values.get('native-ufs-root', []):
         return
-    if values.get('sheng-pmgr') != ['2']:
-        raise Error('native UFS root boot needs exactly one sheng-pmgr=2; the unchanged target AMFI otherwise panics with No PMGR')
     symbols = run([tool('llvm-nm', 'brew install llvm'), '--defined-only', kernel], capture=True)
-    if not any(line.split()[-1:] == ['_sheng_pmgr_run'] for line in symbols.splitlines()):
-        raise Error('the native UFS root kernel lacks the linked sheng PMGR integration')
+    names = {line.split()[-1] for line in symbols.splitlines() if line.split()}
+    linked = '_sheng_pmgr_run' in names
+    if linked:
+        if values.get('sheng-pmgr') != ['2']:
+            raise Error('this kernel links the sheng PMGR integration, so the native UFS root boot '
+                        'needs exactly one sheng-pmgr=2; without it AMFI panics with No PMGR')
+        return
+    if 'sheng-pmgr' in values:
+        raise Error('sheng-pmgr names a PMGR integration this kernel does not link; it prelinks no '
+                    'AMFI, so there is no policy manager to answer (see the board prelink roots)')
+    if 'amfi_get_out_of_my_way' in values or 'amfi=0x0' in values:
+        return
+    # Nothing to check: this kernel has no AMFI to panic and no PMGR to supply.
+    return
 
 
 def write_volume(stage, image, label, size_mib):
