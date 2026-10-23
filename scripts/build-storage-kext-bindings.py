@@ -105,7 +105,7 @@ def kext_bundle(cache):
 
 
 def reference_vtable(reference):
-    """The 190 method names of the reference base class, in slot order."""
+    """The 190 method names of the reference base class, in slot order. `reference` is the object's bytes."""
     image = macho(reference)
     require(image['kind'] == 1, 'Expected an ordinary ARM64 reference object')
     entries = symbols(reference, image)
@@ -297,7 +297,10 @@ def main():
         cache_path = Path(value)
     require(cache_path.is_file(), f'{cache_path} missing')
 
-    methods = reference_vtable(reference)
+    require(reference.is_file(), f'{reference} missing')
+
+    # Both parsers below index into the image, so they take its bytes, not its path.
+    methods = reference_vtable(reference.read_bytes())
     cache = cache_path.read_bytes()
     parent, _, bundle = kext_bundle(cache)
     table, pointers = original_vtable(cache, parent, bundle, methods)
