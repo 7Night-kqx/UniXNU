@@ -595,21 +595,18 @@ if [ "$BOOTSTRAP" = 0 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" = 1 ]; then
     KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $ARMCPU_ARCHIVE"
   fi
   if [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
-    # The transport derives from IOBlockStorageDevice, which is not in the xnu tree: the base class is
-    # compiled from the pinned IOStorageFamily source and has to be linked in before the transport, or the
-    # link stops with "vtable for IOBlockStorageDevice" and "IOBlockStorageDevice::gMetaClass" undefined.
+    # The transport derives from IOBlockStorageDevice, which is not in the xnu tree: it is a class
+    # of Apple's separate IOStorageFamily project, and the kernelcache already carries
+    # com.apple.iokit.IOStorageFamily.
+    #
+    # The base class must NOT be compiled in. scripts/build-storage-kext-bindings.py resolves the
+    # transport's imports to the addresses the prelinked kext has at run time, so exactly one
+    # IOBlockStorageDevice exists and OSMetaClass never sees a duplicate ("class
+    # IOBlockStorageDevice is a duplicate; kext __kernel__ already has a class by that name",
+    # libkern/c++/OSMetaClass.cpp).
     #
     # The probe-only build leaves the block-device half of the transport out (XNU_NATIVE_UFS_PROBE_ONLY),
-    # so it references no IOStorageFamily symbol and the base class must stay out as well: linking it
-    # would register a second class of that name, and the kernelcache's own com.apple.iokit.IOStorageFamily
-    # kext refuses the duplicate ("class IOBlockStorageDevice is a duplicate; kext __kernel__ already has
-    # a class by that name", libkern/c++/OSMetaClass.cpp).
-    if [ "${XNU_NATIVE_UFS_PROBE_ONLY:-0}" != 1 ]; then
-      STORAGE_CLASSES_ARCHIVE=$ROOT/build/storage-classes/libStorageClasses.a
-      require_archive "$STORAGE_CLASSES_ARCHIVE"
-      KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$STORAGE_CLASSES_ARCHIVE"
-      KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $STORAGE_CLASSES_ARCHIVE"
-    fi
+    # so it imports no IOStorageFamily symbol and no bindings are made.
     UFS_ARCHIVE=$ROOT/build/native-ufs/libNativeUfs.a
     require_archive "$UFS_ARCHIVE"
     KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$UFS_ARCHIVE"

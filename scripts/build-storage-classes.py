@@ -93,6 +93,10 @@ if deployment != (2, 0x110000):
 
 archive = out / 'libStorageClasses.a'
 archive.unlink(missing_ok=True)
-subprocess.run(['xcrun', 'ar', 'rcs', archive, destination], check=True)
-print(f'IOBlockStorageDevice compiled from IOStorageFamily {PINNED_REVISION[:12]}; '
-      'ordinary ARM64 / iOS 17 audited')
+# No archive is made on purpose. The transport no longer links this object: the base class is the
+# kernelcache's own com.apple.iokit.IOStorageFamily kext, and scripts/build-storage-kext-bindings.py
+# resolves the transport's imports to that kext's addresses. Linking this object would register a
+# second IOBlockStorageDevice and OSMetaClass would refuse it. The object is still built because it
+# is the reference that names the 190 virtual slots, which is what turns an import into an address.
+print(f'IOBlockStorageDevice reference compiled from IOStorageFamily {PINNED_REVISION[:12]}; '
+      'ordinary ARM64 / iOS 17 audited (not linked)')

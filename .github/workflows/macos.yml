@@ -82,6 +82,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install Python tools
+        run: |
+          # The userdata step decodes the IPSW's OS disk image itself (scripts/unixnu/dmg.py) instead of
+          # attaching it with hdiutil, so that the same decode runs on a Linux host and its CRC-32s can be
+          # checked in CI. That image is LZFSE throughout and lzfse is the only chunk format needing a
+          # module. A wheel exists for this interpreter, so nothing is compiled here.
+          python3 -m pip install lzfse
+
       - name: Install host tools
         run: |
           # lld is a separate formula since Homebrew split it out of llvm: the payload patch links
@@ -138,6 +146,16 @@ jobs:
           # zero bytes in the source kernel but nop words in the prelinked kernel this board builds, and
           # the patcher once refused the second form only after the kernel and userdata had succeeded.
           python3 scripts/tests/check-probe-padding.py
+          # The userdata step decodes the OS disk image itself instead of attaching it with hdiutil. A
+          # blkx run's sector is relative to its partition, and using it as an absolute sector once
+          # produced an all-zero image whose every CRC still passed. Check the placement rule directly,
+          # and check that this interpreter can decode LZFSE at all, rather than at the end of a build.
+          python3 scripts/tests/check-dmg-offsets.py
+          python3 -c 'import lzfse' || {
+            echo "lzfse is missing: the OS disk image of this IPSW decodes as LZFSE, and the userdata step" >&2
+            echo "has no fallback. Install it with: python3 -m pip install lzfse" >&2
+            exit 1
+          }
 
       - name: Build kernel
         env:

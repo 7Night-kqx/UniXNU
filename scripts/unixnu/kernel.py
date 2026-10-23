@@ -44,6 +44,21 @@ def toolchain_path():
     return os.pathsep.join(extra + [os.environ.get('PATH', '')])
 
 
+def kernelcache(ctx):
+    """The original kernelcache this board is qualified against, from the option, the board pin, or the IPSW."""
+    spec = ctx.board.get('kernel', {}).get('prelink') or {}
+    cache = ctx.option('kernelcache', 'UNIXNU_KERNELCACHE') or (expand(ctx.tree / spec['kernelcache']) if spec.get('kernelcache') else None)
+    if not cache:
+        # Not given: take it from the IPSW (--ipsw PATH_OR_URL, or the url of board.toml [ipsw]).
+        cache = ipsw.kernelcache(ctx, ipsw.Ipsw(ctx))
+    if not cache.is_file():
+        raise Error(f'kernelcache not found: {cache}')
+    wanted = spec.get('kernelcache_sha256')
+    if wanted and sha256_file(cache) != wanted:
+        raise Error(f'{cache} does not match the kernelcache this board was qualified against (sha256 {wanted})')
+    return cache
+
+
 def build_archives(ctx, env):
     """Run the board's archive builders ([kernel] archives of board.toml), in order, then check the prebuilt archives.
 
@@ -52,6 +67,15 @@ def build_archives(ctx, env):
     """
     entries = ctx.board.get('kernel', {}).get('archives', [])
     env = dict(env, PATH=toolchain_path())
+    # A builder that resolves symbols against the original kernelcache needs it before the link, not only in the
+    # prelink step that runs after it. Resolve it here once (the IPSW read is cached) and hand it over the way the
+    # prelink step resolves it, so both use the same file and the same pin.
+    if any('build-storage-kext-bindings.py' in entry for entry in entries):
+        env['UNIXNU_KERNELCACHE'] = str(kernelcache(ctx))
+        # ...and the rebase the prelink step will apply to that image. The bindings are absolute
+        # addresses copied out of the original layout, so a kext-owned one must move with the
+        # component; kernel exports are resolved against the new kernel and must not.
+        env['UNIXNU_PRELINK_SLIDE'] = str(ctx.board.get('kernel', {}).get('prelink', {}).get('slide', '0'))
     # The storage transports include <IOKit/storage/IOBlockStorageDevice.h>, which is not in the xnu tree: the
     # classes live in Apple's separate IOStorageFamily project, fetched as a reference. The builders add
     # build/storage-abi/include to their command line, so stage it (idempotently) before the first of them
@@ -105,15 +129,7 @@ def prelink(ctx):
     spec = ctx.board.get('kernel', {}).get('prelink')
     if not spec:
         raise Error('board.toml has no [kernel.prelink]')
-    cache = ctx.option('kernelcache', 'UNIXNU_KERNELCACHE') or (expand(ctx.tree / spec['kernelcache']) if spec.get('kernelcache') else None)
-    if not cache:
-        # Not given: take it from the IPSW (--ipsw PATH_OR_URL, or the url of board.toml [ipsw]).
-        cache = ipsw.kernelcache(ctx, ipsw.Ipsw(ctx))
-    if not cache.is_file():
-        raise Error(f'kernelcache not found: {cache}')
-    wanted = spec.get('kernelcache_sha256')
-    if wanted and sha256_file(cache) != wanted:
-        raise Error(f'{cache} does not match the kernelcache this board was qualified against (sha256 {wanted})')
+    cache = kernelcache(ctx)
     kernel = ctx.tree / spec['kernel']
     if not kernel.is_file():
         raise Error(f'{kernel} not found; run "unixnu build kernel" first')
