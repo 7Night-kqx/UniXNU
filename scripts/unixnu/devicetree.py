@@ -346,10 +346,17 @@ def generate(dtb, config, *, unique_chip_id=None, data=False, trust=False, addon
         values = registers(entry)
         if len(values) != 1 or values[0][0] > 0xffffffff:
             raise Error(f'{entry.name}: CPU affinity must fit a u32')
-        cpu_nodes.append(node(f'cpu{len(cpu_nodes)}', [('reg', struct.pack('<I', values[0][0])),
-                         ('state', b'running\0' if not cpu_nodes else b'waiting\0'), ('device_type', b'cpu\0'),
-                         ('compatible', entry.properties['compatible']),
-                         ('timebase-frequency', struct.pack('<I', cpus.scalar('timebase-frequency')))]))
+        properties = [('reg', struct.pack('<I', values[0][0])),
+                      ('state', b'running\0' if not cpu_nodes else b'waiting\0'), ('device_type', b'cpu\0'),
+                      ('compatible', entry.properties['compatible']),
+                      ('timebase-frequency', struct.pack('<I', cpus.scalar('timebase-frequency')))]
+        if 'unixnu,cluster-type' in entry.properties:
+            # XNU reads the cluster type as an integer character: 'E' or 'P'.
+            kind = entry.strings('unixnu,cluster-type')
+            if kind not in (['E'], ['P']):
+                raise Error(f'{entry.name}: unixnu,cluster-type must be "E" or "P"')
+            properties.append(('cluster-type', struct.pack('<I', ord(kind[0]))))
+        cpu_nodes.append(node(f'cpu{len(cpu_nodes)}', properties))
     if not cpu_nodes:
         raise Error('Hardware DTS requires an enabled boot CPU')
     children.append(node('cpus', children=cpu_nodes))
