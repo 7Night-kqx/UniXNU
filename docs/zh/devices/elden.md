@@ -6,9 +6,9 @@ SM8750P 社区设备移植，由 jerry-2009 维护。
 
 ## 当前状态
 
-TB322FC 使用同一镜像完成了两次内存冷启动。菜单、1904x3040 GOP 显示、音量键输入和 FAT 负载可用，下一阶段需要准备可启动 XNU 的镜像。
+TB322FC 已通过菜单、1904x3040 GOP 显示、音量键和 FAT 负载的重复内存启动验证。格式 2 配置、live FDT、内存保留区、ADT 和启动 CPU 输入通过宿主机审查。
 
-使用仓库固定的第三方源码、固件覆盖层和阶段 1 构建步骤。设备驱动目录包含 `EldenRamDiskDxe`。
+4 KiB XNU 内核、预链接的 `kernel.macho` 和宿主机 ADT 已生成并审计。下一项设备验证为 56 MiB 内存负载传输，随后验证 DarwinBoot 和 XNU 入口。
 
 ## 使用此移植
 
@@ -27,6 +27,5 @@ git submodule update --init --recursive
 
 ## 来源
 
-- [README](https://github.com/jerry-2009/UNIXNU_elden/blob/c591b1a0a471f24978aba25c56c8f6ec9bd06668/README.md)
-- [阶段 1 构建](https://github.com/jerry-2009/UNIXNU_elden/blob/c591b1a0a471f24978aba25c56c8f6ec9bd06668/docs/PHASE1.md)
-- [实机结果](https://github.com/jerry-2009/UNIXNU_elden/blob/c591b1a0a471f24978aba25c56c8f6ec9bd06668/docs/PHASE1-STATUS.md)
+- [README: jerry-2009/UNIXNU_elden](https://github.com/jerry-2009/UNIXNU_elden/blob/57e68be133c407ef9fa7dc6b4f10f1bd4cd3aedd/README.md)
+- [内核输入: jerry-2009/UNIXNU_elden](https://github.com/jerry-2009/UNIXNU_elden/blob/57e68be133c407ef9fa7dc6b4f10f1bd4cd3aedd/docs/PHASE2.2-STATUS.md)

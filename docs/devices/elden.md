@@ -6,9 +6,9 @@ A community port for SM8750P, maintained by jerry-2009.
 
 ## State
 
-TB322FC completes two cold RAM boots with the same image. The menu, 1904x3040 GOP display, volume-key input and FAT payload work. The next phase prepares an XNU-capable image.
+TB322FC passes repeated RAM boots of the menu, 1904x3040 GOP display, volume keys and FAT payload. The format 2 configuration, live FDT, memory reservations, ADT and boot-CPU inputs pass host review.
 
-Use the repository's pinned third-party sources, firmware overlays and phase 1 build instructions. Its device driver directory includes `EldenRamDiskDxe`.
+The 4 KiB XNU kernel, prelinked `kernel.macho` and host ADT are generated and audited. The next device stage is the 56 MiB RAM payload transport, followed by DarwinBoot and XNU entry.
 
 ## Use this port
 
@@ -27,6 +27,5 @@ git submodule update --init --recursive
 
 ## Sources
 
-- [README](https://github.com/jerry-2009/UNIXNU_elden/blob/c591b1a0a471f24978aba25c56c8f6ec9bd06668/README.md)
-- [Phase 1 build](https://github.com/jerry-2009/UNIXNU_elden/blob/c591b1a0a471f24978aba25c56c8f6ec9bd06668/docs/PHASE1.md)
-- [Hardware results](https://github.com/jerry-2009/UNIXNU_elden/blob/c591b1a0a471f24978aba25c56c8f6ec9bd06668/docs/PHASE1-STATUS.md)
+- [README: jerry-2009/UNIXNU_elden](https://github.com/jerry-2009/UNIXNU_elden/blob/57e68be133c407ef9fa7dc6b4f10f1bd4cd3aedd/README.md)
+- [Kernel inputs: jerry-2009/UNIXNU_elden](https://github.com/jerry-2009/UNIXNU_elden/blob/57e68be133c407ef9fa7dc6b4f10f1bd4cd3aedd/docs/PHASE2.2-STATUS.md)

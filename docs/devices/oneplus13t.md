@@ -5,14 +5,18 @@ A community-maintained port for SM8750. Current results are based on the maintai
 | Repository | Maintainer |
 | --- | --- |
 | [UniXNU-Pagani_SM8750](https://github.com/IssacL04/UniXNU-Pagani_SM8750) | [IssacL04](https://github.com/IssacL04) |
+| [UniXNU-sm8750-common](https://github.com/IssacL04/UniXNU-sm8750-common) | [IssacL04](https://github.com/IssacL04) |
+| [UniXNU-Pagani-Drivers](https://github.com/IssacL04/UniXNU-Pagani-Drivers) | [IssacL04](https://github.com/IssacL04) |
 
 ## State
 
-The stage 7 run 39 record confirms root mounting and the system interface on hardware. Touch remains unavailable. Firmware, XNU, root and UI results apply to the recorded device configuration.
+The verified hardware configuration reaches the iPadOS UI with UFS root reads and CPU framebuffer presentation. Data uses a volatile RAM seed.
+
+The format 2 kernel, firmware, payload and image pass host builds. The current source includes S3910 touch, physical keys and DSI brightness/blanking; the kernel link, prelink and HID/backlight ABI checks pass. The migrated image and these peripheral additions await device validation. GPU, network, audio and full power management remain pending.
 
 ## Sources
 
-- [README: IssacL04/UniXNU-Pagani_SM8750](https://github.com/IssacL04/UniXNU-Pagani_SM8750/blob/9a6b057527429159a531f37c3af5b7235806caf1/README.md)
+- [README: IssacL04/UniXNU-Pagani_SM8750](https://github.com/IssacL04/UniXNU-Pagani_SM8750/blob/fcab49e2ea2f9ddfaa08ee6e8109ba7ed67029ac/README.md)
 
 ## Dual-system storage
 
@@ -26,11 +30,7 @@ The layout below is recorded from the 256 GB model.
 | UniXNU partition | Partition 16, LBA 44928768 to 61705983 |
 | F2FS shrink request / expected result | 40907264 / 40907535 blocks of 4096 bytes |
 
-Use the [dual-system partition guide](/porting/dual-system-partition) to calculate a layout from the connected device. Do not copy these LBAs to another phone. Inspect the current partition table with:
-
-```sh
-python3 scripts/dual_sys/partition.py inspect
-```
+Calculate and inspect the target layout with the [dual-system partition guide](/porting/dual-system-partition). Measure the connected device before selecting partition boundaries.
 
 ## Use this port
 

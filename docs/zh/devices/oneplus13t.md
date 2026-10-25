@@ -5,14 +5,18 @@
 | 仓库 | 维护者 |
 | --- | --- |
 | [UniXNU-Pagani_SM8750](https://github.com/IssacL04/UniXNU-Pagani_SM8750) | [IssacL04](https://github.com/IssacL04) |
+| [UniXNU-sm8750-common](https://github.com/IssacL04/UniXNU-sm8750-common) | [IssacL04](https://github.com/IssacL04) |
+| [UniXNU-Pagani-Drivers](https://github.com/IssacL04/UniXNU-Pagani-Drivers) | [IssacL04](https://github.com/IssacL04) |
 
 ## 当前状态
 
-阶段 7 第 39 次运行记录确认实机已挂载根卷并进入系统界面，触控待完成。固件、XNU、根卷和界面结果适用于记录中的设备配置。
+已验证的实机配置可通过 UFS 读取根卷并使用 CPU 帧缓冲呈现 iPadOS 界面，Data 使用易失的内存种子。
+
+格式 2 内核、固件、负载和镜像通过宿主机构建。当前源码包含 S3910 触控、物理按键及 DSI 亮度/显示关闭，内核链接、预链接和 HID/背光 ABI 检查通过。迁移后的镜像和这些外设改动待实机验证，GPU、网络、音频和完整电源管理待完成。
 
 ## 来源
 
-- [README: IssacL04/UniXNU-Pagani_SM8750](https://github.com/IssacL04/UniXNU-Pagani_SM8750/blob/9a6b057527429159a531f37c3af5b7235806caf1/README.md)
+- [README: IssacL04/UniXNU-Pagani_SM8750](https://github.com/IssacL04/UniXNU-Pagani_SM8750/blob/fcab49e2ea2f9ddfaa08ee6e8109ba7ed67029ac/README.md)
 
 ## 双系统存储
 
@@ -26,11 +30,7 @@
 | UniXNU 分区 | 分区 16，LBA 44928768 到 61705983 |
 | F2FS 缩容请求 / 预期结果 | 40907264 / 40907535 个 4096 字节块 |
 
-按[双系统分区指南](/zh/porting/dual-system-partition)从连接的设备计算布局，不要把这些 LBA 复制到另一台手机。检查当前分区表：
-
-```sh
-python3 scripts/dual_sys/partition.py inspect
-```
+按[双系统分区指南](/zh/porting/dual-system-partition)计算并检查目标布局。选择分区边界前先测量所连接的设备。
 
 ## 使用此移植
 

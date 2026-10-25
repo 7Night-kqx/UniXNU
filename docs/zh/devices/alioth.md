@@ -28,5 +28,5 @@ git submodule update --init --recursive
 
 ## 来源
 
-- [README](https://github.com/FFT-infra/UniXNU-alioth/blob/32988f00809d629721d69a34967a384710f929fd/README.md)
-- [移植记录](https://github.com/FFT-infra/UniXNU-alioth/blob/32988f00809d629721d69a34967a384710f929fd/porting.toml)
+- [板级配置: FFT-infra/UniXNU-alioth](https://github.com/FFT-infra/UniXNU-alioth/blob/edb4f63f42e75d1f855943d7a58cc7c55ee21327/board.toml)
+- [fjcx555/UniXNU-alioth](https://github.com/fjcx555/UniXNU-alioth)
