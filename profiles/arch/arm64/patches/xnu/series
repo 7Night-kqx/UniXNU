@@ -51,3 +51,5 @@
 ../../../../../patches/xnu/zzx-pmap-sync-64bit-pa.patch
 ../../../../../patches/xnu/zzy-native-gpu-addon-mount.patch
 ../../../../../patches/xnu/zzy-staged-system-apps.patch
+../../../../../patches/xnu/zzyb-native-cryptex-os-view.patch
+../../../../../patches/xnu/zzyc-owner-skip-launch-constraints.patch
