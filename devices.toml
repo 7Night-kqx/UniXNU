@@ -10,7 +10,7 @@ legacy_page = "preserve"
 soc = "SM8550"
 summary = "[Implementation and evidence by area](/devices/sheng)"
 repository_id = 1425469865
-revision = "88b11aeb4b0ffc414e5992e77194e210be475a27"
+revision = "9bd13863ae61d0fb757625e71501f3651a78feba"
 board = "sheng"
 os_profile = "ipados-17.7.11-21H461"
 components = ["ArmDTPlatform", "ArmCpu", "SoftwareAES", "ShengUfs", "VirtioMmioBlock", "RamBlock", "Adreno740", "AdrenoMetal", "GopFramebuffer", "ShengHidInput", "ShengNovatekTouch", "QcomGeniSpi", "AppleKeyStoreState", "XnuPrelink", "DarwinBoot", "VerifiedRoot", "ShengPreflight", "AirNir", "Ath12kWifi"]
@@ -177,7 +177,7 @@ legacy_page = "preserve"
 soc = "SM8150"
 summary = "Device repository and boot chain prepared; no hardware result"
 repository_id = 1431155653
-revision = "18d7dc1c8a409b3d18d3957088c9b3192c874a07"
+revision = "150e77f31c9686ce04013d9faeccff201f858799"
 board = "cepheus"
 
 [[device]]
@@ -741,7 +741,7 @@ legacy_page = "preserve"
 soc = "SM8250"
 summary = "UEFI platform and kernel baseline; status not documented"
 repository_id = 1429531274
-revision = "e44b2ef6337e414de385bddbd4345e3e769d2453"
+revision = "c99d3c1e2892aaa3aec21969cd77f062845f7212"
 board = "instantnoodlep17"
 os_profile = "ipados-17.7.11-21H461"
 components = []
