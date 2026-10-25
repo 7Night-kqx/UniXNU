@@ -82,8 +82,6 @@ The GPU path covers discovery, command encoding, pipeline archives, IOSurface im
 | Submission | No TLB invalidation; a stalled fence still invalidates |
 | Boot log rows | `[vm map]`, `[vm unmap]`, `[vm kinds]`, `[bo pool]` |
 
-On sheng a BO map costs 0.20 ms.
-
 ## Shader compilation
 
 The driver compiles the original UI shaders on the device:

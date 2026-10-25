@@ -82,8 +82,6 @@ GPU 路径覆盖发现、命令编码、pipeline archive、IOSurface 导入、fe
 | 提交 | 不做 TLB 失效；fence 卡住时仍会失效 |
 | 启动日志行 | `[vm map]`、`[vm unmap]`、`[vm kinds]`、`[bo pool]` |
 
-sheng 上映射一个 BO 约 0.20 ms。
-
 ## 着色器编译
 
 驱动在设备上编译原始 UI shader：

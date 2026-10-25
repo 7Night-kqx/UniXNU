@@ -25,8 +25,7 @@ cannot reach. The idle desktop submits about 6 command buffers per 250 ms at
 not scan directories, and each library is read only while the display is quiet.
 
 A render pass that cannot be encoded still returns an encoder, and its command
-buffer is refused: RenderBox caches encoder methods, so a nil encoder crashed
-WidgetRenderer. The first problem of each process is written to the driver's
+buffer is refused: RenderBox caches encoder methods and cannot take nil. The first problem of each process is written to the driver's
 per-process text line from the thread that hit it.
 
 ```sh

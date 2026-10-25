@@ -23,7 +23,7 @@ render server 的沙盒访问不到 cryptex 路径。120 Hz 下空闲桌面每 2
 每个库。
 
 无法编码的 render pass 仍返回 encoder，并拒绝其命令缓冲区：RenderBox 会缓存
-encoder 的方法，nil encoder 曾让 WidgetRenderer 崩溃。每个进程的第一个问题由出错
+encoder 的方法，不能接受 nil。每个进程的第一个问题由出错
 的线程写入驱动的进程文本行。
 
 ```sh
