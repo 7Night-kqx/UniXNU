@@ -75,8 +75,16 @@ jobs:
           ls "$mountpoint/sbin/launchd"
           ls "$mountpoint/private/var" >/dev/null
 
-      - name: Create the small APFS Data seed
-        run: python3 scripts/prepare-owner-data-fixture.py
+      - name: Create the APFS Data seed
+        run: |
+          # The seed is created at the requested size: hdiutil -layout NONE writes the APFS container at
+          # offset 0, which is the layout the kernel's persistent-store window expects.
+          if [ -n "$GROW_GIB" ]; then
+            sed -i '' "s/'-size', '32m'/'-size', '${GROW_GIB}g'/" scripts/prepare-owner-data-fixture.py
+            sed -i '' "s/owner-data-32.cdr/owner-data-seed.cdr/" scripts/prepare-owner-data-fixture.py
+            sed -i '' "s#build/owner-data-fixture/owner-data-seed.cdr#build/owner-data-fixture/owner-data-seed.cdr#" .github/workflows/seed-data.yml
+          fi
+          python3 scripts/prepare-owner-data-fixture.py
 
       - name: Pack the seed as DBRDISK1
         run: |
@@ -85,19 +93,13 @@ jobs:
           from pathlib import Path
           sys.path.insert(0, 'drivers/DarwinBoot/Test')
           import packed_ramdisk
-          raw = Path('build/owner-data-fixture/owner-data-32.cdr')
+          raw = Path('build/owner-data-fixture/owner-data-seed.cdr')
           out = Path('build/data-seed/data.dbr')
           out.parent.mkdir(parents=True, exist_ok=True)
           packed_ramdisk.pack(raw, out)
           info = packed_ramdisk.inspect(out)
           print('packed', out, info)
           PY
-
-      - name: Grow the seed
-        if: inputs.grow_gib != ''
-        run: |
-          python3 scripts/seed-data-grow.py --gib "$GROW_GIB" build/data-seed/data.dbr build/data-seed/data-grow.dbr
-          mv build/data-seed/data-grow.dbr build/data-seed/data.dbr
 
       - name: Detach the OS volume
         if: always()
@@ -122,7 +124,7 @@ jobs:
           path: |
             build/data-seed/data.dbr
             build/data-seed/sha256.txt
-            build/owner-data-fixture/owner-data-32.cdr
+            build/owner-data-fixture/owner-data-seed.cdr
           if-no-files-found: error
           retention-days: 7
 
