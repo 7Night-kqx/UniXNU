@@ -74,11 +74,9 @@ jobs:
         run: |
           # hdiutil -layout NONE puts the APFS container at offset 0, the layout the kernel's
           # persistent-store window expects.  The seed is created at the requested size directly.
-          if [ -n "$GROW_GIB" ]; then
-            sed -i '' "s/'-size', '32m'/'-size', '${GROW_GIB}g'/" scripts/prepare-owner-data-fixture.py
-            sed -i '' "s/owner-data-32.cdr/owner-data-seed.cdr/" scripts/prepare-owner-data-fixture.py
-          fi
-          python3 scripts/prepare-owner-data-fixture.py
+          size=32
+          if [ -n "$GROW_GIB" ]; then size=$((GROW_GIB * 1024)); fi
+          python3 scripts/prepare-owner-data-fixture.py --size-mib "$size"
           ls -l build/owner-data-fixture/
 
       - name: Pack the seed as DBRDISK1
