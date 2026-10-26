@@ -12,13 +12,9 @@ on:
         required: false
         default: "https://updates.cdn-apple.com/2025SpringFCS/fullrestores/122-77166/DCA6CFE8-90E9-4B92-880D-3DE171798E40/iPad_Pro_HFR_17.7.11_21H461_Restore.ipsw"
       grow_gib:
-        description: Grow the seed to this many GiB (empty keeps the 32 MiB seed)
+        description: Data container size in GiB (empty keeps the 32 MiB seed)
         required: false
         default: "8"
-      keep_raw:
-        description: Also keep the raw APFS image (owner-data-32.cdr) in the artifact
-        type: boolean
-        default: false
       release_tag:
         description: Optional release tag to upload the seed to (empty keeps it in the artifact only)
         required: false
@@ -38,7 +34,6 @@ jobs:
     env:
       IPSW_URL: ${{ inputs.ipsw_url }}
       GROW_GIB: ${{ inputs.grow_gib }}
-      KEEP_RAW: ${{ inputs.keep_raw }}
       RELEASE_TAG: ${{ inputs.release_tag }}
     steps:
       - name: Check out UniXNU
@@ -77,14 +72,14 @@ jobs:
 
       - name: Create the APFS Data seed
         run: |
-          # The seed is created at the requested size: hdiutil -layout NONE writes the APFS container at
-          # offset 0, which is the layout the kernel's persistent-store window expects.
+          # hdiutil -layout NONE puts the APFS container at offset 0, the layout the kernel's
+          # persistent-store window expects.  The seed is created at the requested size directly.
           if [ -n "$GROW_GIB" ]; then
             sed -i '' "s/'-size', '32m'/'-size', '${GROW_GIB}g'/" scripts/prepare-owner-data-fixture.py
             sed -i '' "s/owner-data-32.cdr/owner-data-seed.cdr/" scripts/prepare-owner-data-fixture.py
-            sed -i '' "s#build/owner-data-fixture/owner-data-seed.cdr#build/owner-data-fixture/owner-data-seed.cdr#" .github/workflows/seed-data.yml
           fi
           python3 scripts/prepare-owner-data-fixture.py
+          ls -l build/owner-data-fixture/
 
       - name: Pack the seed as DBRDISK1
         run: |
@@ -93,12 +88,13 @@ jobs:
           from pathlib import Path
           sys.path.insert(0, 'drivers/DarwinBoot/Test')
           import packed_ramdisk
-          raw = Path('build/owner-data-fixture/owner-data-seed.cdr')
+          raw = next(Path('build/owner-data-fixture').glob('*.cdr'))
+          header = raw.open('rb').read(64)
+          print('raw header', header[32:36], header[:32].hex())
           out = Path('build/data-seed/data.dbr')
           out.parent.mkdir(parents=True, exist_ok=True)
           packed_ramdisk.pack(raw, out)
-          info = packed_ramdisk.inspect(out)
-          print('packed', out, info)
+          print('packed', out, packed_ramdisk.inspect(out))
           PY
 
       - name: Detach the OS volume
@@ -124,7 +120,6 @@ jobs:
           path: |
             build/data-seed/data.dbr
             build/data-seed/sha256.txt
-            build/owner-data-fixture/owner-data-seed.cdr
           if-no-files-found: error
           retention-days: 7
 
@@ -146,7 +141,7 @@ jobs:
             echo "| item | value |"
             echo "| --- | --- |"
             echo "| seed | $(shasum -a 256 build/data-seed/data.dbr 2>/dev/null | cut -d' ' -f1) |"
-            echo "| grow_gib | ${GROW_GIB:-none} |"
+            echo "| size_gib | ${GROW_GIB:-32 MiB} |"
             echo "| release | ${RELEASE_TAG:-artifact only} |"
             echo
             echo "Use it with: \`./unixnu build payload --data-ramdisk data.dbr\`"
