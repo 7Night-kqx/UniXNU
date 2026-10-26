@@ -53,7 +53,7 @@ jobs:
         run: |
           sw_vers
           uname -m
-          xcodebuild -version | head -n 1
+          xcodebuild -version
           python3 --version
           df -h "$GITHUB_WORKSPACE"
 
