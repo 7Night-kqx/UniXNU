@@ -1,0 +1,151 @@
+name: Seed Data volume
+
+# Builds the packed Data seed (DBRDISK1) that the payload takes as --data-ramdisk:
+# the APFS Data volume lives in RAM and is mounted at /private/var, so the kernel
+# needs no Data partition.  The seed is derived from the supplied IPSW's OS volume.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipsw_url:
+        description: Restore IPSW URL (defaults to the iPad7,1 17.7.11 21H461 image)
+        required: false
+        default: "https://updates.cdn-apple.com/2025SpringFCS/fullrestores/122-77166/DCA6CFE8-90E9-4B92-880D-3DE171798E40/iPad_Pro_HFR_17.7.11_21H461_Restore.ipsw"
+      grow_gib:
+        description: Grow the seed to this many GiB (empty keeps the 32 MiB seed)
+        required: false
+        default: "8"
+      keep_raw:
+        description: Also keep the raw APFS image (owner-data-32.cdr) in the artifact
+        type: boolean
+        default: false
+      release_tag:
+        description: Optional release tag to upload the seed to (empty keeps it in the artifact only)
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  seed:
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      IPSW_URL: ${{ inputs.ipsw_url }}
+      GROW_GIB: ${{ inputs.grow_gib }}
+      KEEP_RAW: ${{ inputs.keep_raw }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Check out UniXNU
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out the DarwinBoot test helpers
+        run: git submodule update --init --depth 1 drivers/DarwinBoot
+
+      - name: Report the runner
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version | head -n 1
+          python3 --version
+          df -h "$GITHUB_WORKSPACE"
+
+      - name: Download the IPSW
+        run: |
+          mkdir -p "$RUNNER_TEMP/ipsw" .cache/firmware/target-volumes
+          curl -fL --retry 3 --retry-all-errors -o "$RUNNER_TEMP/ipsw/restore.ipsw" "$IPSW_URL"
+          ls -l "$RUNNER_TEMP/ipsw/restore.ipsw"
+
+      - name: Extract the OS volume image
+        run: python3 scripts/extract-target-volume.py OS --ipsw "$RUNNER_TEMP/ipsw/restore.ipsw"
+
+      - name: Mount the OS volume read-only
+        run: |
+          image=.cache/firmware/target-volumes/044-76040-038.dmg
+          mountpoint=.cache/firmware/target-volumes/os-mount
+          mkdir -p "$mountpoint"
+          hdiutil attach -nobrowse -readonly -owners off -mountpoint "$mountpoint" "$image"
+          ls "$mountpoint/sbin/launchd"
+          ls "$mountpoint/private/var" >/dev/null
+
+      - name: Create the small APFS Data seed
+        run: python3 scripts/prepare-owner-data-fixture.py
+
+      - name: Pack the seed as DBRDISK1
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'drivers/DarwinBoot/Test')
+          import packed_ramdisk
+          raw = Path('build/owner-data-fixture/owner-data-32.cdr')
+          out = Path('build/data-seed/data.dbr')
+          out.parent.mkdir(parents=True, exist_ok=True)
+          packed_ramdisk.pack(raw, out)
+          info = packed_ramdisk.inspect(out)
+          print('packed', out, info)
+          PY
+
+      - name: Grow the seed
+        if: inputs.grow_gib != ''
+        run: |
+          python3 scripts/seed-data-grow.py --gib "$GROW_GIB" build/data-seed/data.dbr build/data-seed/data-grow.dbr
+          mv build/data-seed/data-grow.dbr build/data-seed/data.dbr
+
+      - name: Detach the OS volume
+        if: always()
+        run: hdiutil detach .cache/firmware/target-volumes/os-mount || true
+
+      - name: Report the seed
+        run: |
+          shasum -a 256 build/data-seed/data.dbr | tee build/data-seed/sha256.txt
+          ls -l build/data-seed/
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'drivers/DarwinBoot/Test')
+          import packed_ramdisk
+          print(packed_ramdisk.inspect(Path('build/data-seed/data.dbr')))
+          PY
+
+      - name: Upload the seed as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-seed
+          path: |
+            build/data-seed/data.dbr
+            build/data-seed/sha256.txt
+            build/owner-data-fixture/owner-data-32.cdr
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload the seed to a release
+        if: inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes "Data seed (DBRDISK1) for the dada port"
+          gh release upload "$RELEASE_TAG" build/data-seed/data.dbr build/data-seed/sha256.txt --clobber
+          gh release view "$RELEASE_TAG" --json assets
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Data seed"
+            echo
+            echo "| item | value |"
+            echo "| --- | --- |"
+            echo "| seed | $(shasum -a 256 build/data-seed/data.dbr 2>/dev/null | cut -d' ' -f1) |"
+            echo "| grow_gib | ${GROW_GIB:-none} |"
+            echo "| release | ${RELEASE_TAG:-artifact only} |"
+            echo
+            echo "Use it with: \`./unixnu build payload --data-ramdisk data.dbr\`"
+          } >> "$GITHUB_STEP_SUMMARY"
