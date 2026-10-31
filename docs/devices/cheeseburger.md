@@ -4,4 +4,4 @@
 
 Complete and validate [porting.toml](/porting/records) in the device repository to publish its subsystem record.
 
-DinnerABC/UniXNU-cheeseburger/configuration: invalid status
+DinnerABC/UniXNU-cheeseburger/configuration: host evidence is required
